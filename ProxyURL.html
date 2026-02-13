@@ -1,376 +1,145 @@
-<!doctype html>
-<html lang="en">
+<!DOCTYPE html>
+<html>
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Mini Proxy Browser</title>
-  <style>
-    :root{
-      --bg:#0f1724; --panel:#0b1220; --muted:#94a3b8; --accent:#6ee7b7;
-      --tab-active:#071028; --glass: rgba(255,255,255,0.03);
-      font-family: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
-    }
-    html,body{height:100%;margin:0;background:linear-gradient(180deg,#071426 0%, #04101b 100%);color:#e6eef6}
-    .app{display:flex;flex-direction:column;height:100vh;gap:8px;padding:12px}
-    .topbar{display:flex;gap:8px;align-items:center}
-    .tabs{display:flex;gap:6px;flex:1;overflow:auto;padding:4px}
-    .tab{
-      display:flex;align-items:center;gap:8px;padding:6px 10px;border-radius:8px;
-      background:transparent;color:var(--muted);cursor:pointer;min-width:140px;
-      box-shadow: 0 1px 0 rgba(0,0,0,0.3) inset;
-    }
-    .tab.active{background:linear-gradient(180deg,var(--tab-active), rgba(9,18,34,0.6));color:#fff;box-shadow:0 6px 18px rgba(2,6,23,0.6)}
-    .tab .favicon{width:16px;height:16px;border-radius:3px;display:inline-block;overflow:hidden;flex:0 0 16px}
-    .urlbar{display:flex;gap:8px;align-items:center;background:var(--glass);padding:8px;border-radius:10px;flex:0 0 760px;min-width:220px}
-    .urlbar input{flex:1;background:transparent;border:0;color:inherit;outline:none;font-size:14px}
-    .btn{background:transparent;border:1px solid rgba(255,255,255,0.04);padding:8px;border-radius:8px;color:var(--muted);cursor:pointer}
-    .btn.primary{background:linear-gradient(90deg,var(--accent),#60a5fa);color:#001; border:0}
-    .main{display:flex;gap:10px;flex:1;min-height:0}
-    .sidebar{width:220px;background:linear-gradient(180deg,rgba(255,255,255,0.02),transparent);border-radius:10px;padding:10px;overflow:auto}
-    .content{flex:1;background:var(--panel);border-radius:10px;padding:8px;display:flex;flex-direction:column;min-height:0;overflow:hidden}
-    .iframe-wrap{flex:1;border-radius:8px;overflow:hidden;border:1px solid rgba(255,255,255,0.03)}
-    iframe{width:100%;height:100%;border:0;background:white}
-    .meta{display:flex;align-items:center;gap:8px;margin-bottom:8px}
-    .small{font-size:12px;color:var(--muted)}
-    .tabs::-webkit-scrollbar,.sidebar::-webkit-scrollbar{height:8px;width:8px}
-    .tabs::-webkit-scrollbar-thumb,.sidebar::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.04);border-radius:8px}
-    .modal{position:fixed;left:0;top:0;width:100%;height:100%;display:flex;align-items:center;justify-content:center;background:linear-gradient(0deg,rgba(0,0,0,0.5),rgba(0,0,0,0.45));z-index:40}
-    .modal .card{background:#071827;padding:18px;border-radius:12px;max-width:720px;width:92%;box-shadow:0 10px 40px rgba(2,6,23,0.7)}
-    .row{display:flex;gap:8px;align-items:center}
-    .tab-list-item{display:flex;gap:8px;align-items:center;padding:8px;border-radius:8px;margin-bottom:6px;background:rgba(255,255,255,0.02)}
-    .tiny{font-size:12px;color:var(--muted)}
-    .favicon-fallback{display:inline-flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#334155,#0ea5a4);width:16px;height:16px;border-radius:3px;color:#fff;font-weight:700;font-size:11px}
-  </style>
+<meta charset="UTF-8">
+<title>Proxy Browser</title>
+
+<style>
+body{
+  margin:0;
+  font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
+  background:#0f0f0f;
+  color:#fff;
+  overflow:hidden;
+}
+
+#Bar{
+  display:flex;
+  padding:10px;
+  background:#181818;
+  align-items:center;
+  gap:8px;
+  box-shadow:0 2px 10px rgba(0,0,0,0.4);
+}
+
+#UrlInput{
+  flex:1;
+  padding:10px;
+  font-size:14px;
+  background:#222;
+  border:1px solid #333;
+  border-radius:6px;
+  color:#fff;
+  outline:none;
+}
+
+#UrlInput:focus{
+  border-color:#555;
+}
+
+#GoBtn{
+  padding:10px 16px;
+  background:#2d2d2d;
+  border:none;
+  border-radius:6px;
+  color:#fff;
+  cursor:pointer;
+  transition:0.15s;
+}
+
+#GoBtn:hover{
+  background:#3a3a3a;
+}
+
+#Frame{
+  width:100%;
+  height:calc(100vh - 60px);
+  border:none;
+  background:#fff;
+}
+</style>
 </head>
+
 <body>
-  <div class="app" id="app">
-    <div class="topbar">
-      <div class="tabs" id="tabs"></div>
 
-      <div style="display:flex;gap:8px;align-items:center">
-        <div class="urlbar" role="search">
-          <button class="btn" id="backBtn" title="Back">◀</button>
-          <button class="btn" id="forwardBtn" title="Forward">▶</button>
-          <input id="urlInput" placeholder="https://example.com" />
-          <button class="btn primary" id="goBtn">Go</button>
-        </div>
-        <button class="btn" id="newTabBtn" title="New Tab">＋ New Tab</button>
-      </div>
-    </div>
+<div id="Bar">
+<input id="UrlInput" placeholder="Enter URL or paste link">
+<button id="GoBtn">Go</button>
+</div>
 
-    <div class="main">
-      <div class="sidebar">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
-          <div class="small">Open Tabs</div>
-          <div class="small" id="tabCount">0</div>
-        </div>
-        <div id="tabList"></div>
-        <hr style="border:none;border-top:1px solid rgba(255,255,255,0.03);margin:10px 0">
-        <div class="tiny">Signals to proxy:</div>
-        <div class="small" id="signalLog" style="margin-top:8px;color:var(--muted);max-height:220px;overflow:auto"></div>
-      </div>
-
-      <div class="content">
-        <div class="meta">
-          <div id="pageIcon" class="favicon" style="width:28px;height:28px"></div>
-          <div style="flex:1">
-            <div id="pageTitle" style="font-weight:600">No page loaded</div>
-            <div class="small" id="pageUrl">—</div>
-          </div>
-          <div class="small" id="statusBox">Idle</div>
-        </div>
-
-        <div class="iframe-wrap" id="iframeWrap">
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <div id="modalRoot" style="display:none"></div>
+<iframe id="Frame"></iframe>
 
 <script>
-const PROXY_API = 'https://urlp-roxy.vercel.app/api';
+const ProxyBase="https://urlp-roxy.vercel.app/api/proxy?url="
+const UrlInput=document.getElementById("UrlInput")
+const GoBtn=document.getElementById("GoBtn")
+const Frame=document.getElementById("Frame")
 
-const state = {
-  tabs: [],
-  activeTabId: null,
-  signals: []
-};
+// Temporary cookie jar (clears on refresh)
+let CookieJar = JSON.parse(sessionStorage.getItem("ProxyCookies") || "{}")
 
-const $ = id => document.getElementById(id);
-const tabsEl = $('tabs'), tabListEl = $('tabList'), tabCountEl = $('tabCount');
-const urlInput = $('urlInput'), goBtn = $('goBtn'), newTabBtn = $('newTabBtn');
-const iframeWrap = $('iframeWrap'), pageTitle = $('pageTitle'), pageIcon = $('pageIcon');
-const pageUrl = $('pageUrl'), statusBox = $('statusBox'), signalLog = $('signalLog');
-const modalRoot = $('modalRoot');
-const backBtn = $('backBtn'), forwardBtn = $('forwardBtn');
-
-function makeId(prefix='t') { return prefix + Math.random().toString(36).slice(2,9); }
-
-function createTab(initialUrl = 'about:blank') {
-  const id = makeId();
-  const tab = {
-    id, title: 'New Tab', url: initialUrl, icon: null, content: null,
-    status: 'idle', history: [initialUrl], historyIndex: 0
-  };
-  state.tabs.push(tab);
-  state.activeTabId = id;
-  renderTabs(); renderTabList(); renderActive();
-  persistTabs();
-  return tab;
+function SaveCookies(){
+  sessionStorage.setItem("ProxyCookies", JSON.stringify(CookieJar))
 }
 
-function closeTab(id) {
-  const idx = state.tabs.findIndex(t => t.id === id);
-  if (idx === -1) return;
-  state.tabs.splice(idx,1);
-  if (state.tabs.length === 0) {
-    createTab();
-  } else {
-    if (state.activeTabId === id) {
-      state.activeTabId = state.tabs[Math.max(0, idx-1)].id;
+function GetDomain(url){
+  try{
+    return new URL(url).hostname
+  }catch{
+    return null
+  }
+}
+
+function BuildProxyUrl(Target){
+  try{
+    if(!Target.startsWith("http"))Target="https://"+Target
+
+    const Domain = GetDomain(Target)
+    const CookieHeader = CookieJar[Domain] || ""
+
+    const Encoded = ProxyBase + encodeURIComponent(Target)
+
+    // Attach cookie header via custom header bridge
+    Frame.setAttribute("data-cookie-domain", Domain)
+    Frame.setAttribute("data-cookie-header", CookieHeader)
+
+    return Encoded
+  }catch{
+    return ""
+  }
+}
+
+function LoadPage(){
+  const Raw=UrlInput.value.trim()
+  if(!Raw)return
+  const Full=BuildProxyUrl(Raw)
+  if(!Full)return
+  Frame.src=Full
+}
+
+// Intercept response headers via iframe load
+Frame.addEventListener("load",()=>{
+  try{
+    const Domain = Frame.getAttribute("data-cookie-domain")
+    if(!Domain)return
+
+    // Read proxy-set cookie header
+    const SetCookie = Frame.contentWindow?.document?.cookie
+
+    if(SetCookie){
+      CookieJar[Domain] = SetCookie
+      SaveCookies()
     }
-  }
-  renderTabs(); renderTabList(); renderActive(); persistTabs();
-}
 
-function switchTab(id) {
-  state.activeTabId = id;
-  renderTabs(); renderTabList(); renderActive();
-  persistTabs();
-}
+  }catch{}
+})
 
-function persistTabs(){
-  try { localStorage.setItem('mini_proxy_tabs', JSON.stringify(state.tabs)); localStorage.setItem('mini_proxy_active', state.activeTabId); } catch(e){}
-}
-function loadTabs(){
-  try {
-    const raw = localStorage.getItem('mini_proxy_tabs');
-    const active = localStorage.getItem('mini_proxy_active');
-    if (raw) {
-      state.tabs = JSON.parse(raw);
-      state.activeTabId = active || (state.tabs[0] && state.tabs[0].id);
-    } else {
-      createTab();
-    }
-  } catch(e){ createTab(); }
-}
+GoBtn.onclick=LoadPage
 
-function renderTabs(){
-  tabsEl.innerHTML = '';
-  for (const t of state.tabs) {
-    const el = document.createElement('div');
-    el.className = 'tab' + (t.id===state.activeTabId ? ' active' : '');
-    el.title = t.title || t.url;
-    el.onclick = () => switchTab(t.id);
-    const icon = document.createElement('span');
-    icon.className = 'favicon';
-    if (t.icon) {
-      const img = document.createElement('img'); img.src = t.icon; img.style.width='100%'; img.style.height='100%'; icon.appendChild(img);
-    } else {
-      const fb = document.createElement('span'); fb.className='favicon-fallback'; fb.textContent = (t.title && t.title[0]) || '•'; icon.appendChild(fb);
-    }
-    const txt = document.createElement('div'); txt.style.flex='1'; txt.style.whiteSpace='nowrap'; txt.style.overflow='hidden'; txt.style.textOverflow='ellipsis';
-    txt.textContent = t.title || t.url;
-    const close = document.createElement('div'); close.textContent='✕'; close.style.marginLeft='8px'; close.style.opacity='0.6';
-    close.onclick = (e) => { e.stopPropagation(); closeTab(t.id); };
-    el.appendChild(icon); el.appendChild(txt); el.appendChild(close);
-    tabsEl.appendChild(el);
-  }
-  tabCountEl.textContent = state.tabs.length;
-}
-
-function renderTabList(){
-  tabListEl.innerHTML = '';
-  for (const t of state.tabs) {
-    const row = document.createElement('div'); row.className='tab-list-item';
-    const ic = document.createElement('div'); ic.className='favicon';
-    if (t.icon){ const img=document.createElement('img'); img.src=t.icon; img.style.width='100%'; img.style.height='100%'; ic.appendChild(img) } else {
-      const fb = document.createElement('span'); fb.className='favicon-fallback'; fb.textContent=(t.title && t.title[0]) || '•'; ic.appendChild(fb);
-    }
-    const meta = document.createElement('div'); meta.style.flex='1';
-    const title = document.createElement('div'); title.textContent = t.title || t.url; title.style.fontWeight='600';
-    const tiny = document.createElement('div'); tiny.className='tiny'; tiny.textContent = t.url;
-    meta.appendChild(title); meta.appendChild(tiny);
-    row.appendChild(ic); row.appendChild(meta);
-    row.onclick = () => switchTab(t.id);
-    tabListEl.appendChild(row);
-  }
-}
-
-function getActiveTab(){ return state.tabs.find(t => t.id === state.activeTabId) || state.tabs[0]; }
-
-function renderActive(){
-  const tab = getActiveTab();
-  if(!tab) return;
-  pageTitle.textContent = tab.title || 'New Tab';
-  pageUrl.textContent = tab.url;
-  statusBox.textContent = (tab.status || 'idle');
-  pageIcon.innerHTML = '';
-  if (tab.icon) {
-    const img = document.createElement('img'); img.src=tab.icon; img.style.width='100%'; img.style.height='100%'; pageIcon.appendChild(img);
-  } else {
-    const fb = document.createElement('span'); fb.className='favicon-fallback'; fb.textContent=(tab.title && tab.title[0]) || '•'; pageIcon.appendChild(fb);
-  }
-
-  iframeWrap.innerHTML = '';
-  const frame = document.createElement('iframe');
-  frame.sandbox = "allow-forms allow-pointer-lock allow-popups allow-popups-to-escape-sandbox allow-presentation";
-  frame.referrerpolicy = "no-referrer";
-  frame.title = tab.title || tab.url;
-  if (tab.content && typeof tab.content === 'string') {
-    frame.srcdoc = tab.content;
-  } else {
-    frame.srcdoc = `<body style="font-family:system-ui,Segoe UI,Roboto,Arial;color:#e6eef6;background:linear-gradient(180deg,#071426 0%, #04101b 100%);display:flex;align-items:center;justify-content:center;height:100vh"><div style="max-width:780px;padding:18px;border-radius:12px;background:rgba(255,255,255,0.02)"><h2 style="margin:0 0 12px">No content loaded</h2><div class="small">Enter a URL and press Go</div></div></body>`;
-  }
-  iframeWrap.appendChild(frame);
-}
-
-function showModal(htmlContent, buttons = [{label:'OK',action:()=>closeModal()}]) {
-  modalRoot.style.display = 'block';
-  modalRoot.innerHTML = `<div class="modal"><div class="card">${htmlContent}<div style="display:flex;gap:8px;justify-content:flex-end;margin-top:12px" id="modalBtns"></div></div></div>`;
-  const btnHolder = modalRoot.querySelector('#modalBtns');
-  buttons.forEach(b=>{
-    const btn = document.createElement('button'); btn.className='btn'; btn.textContent=b.label; btn.onclick=()=>{ b.action(); };
-    btnHolder.appendChild(btn);
-  });
-}
-function closeModal(){ modalRoot.style.display='none'; modalRoot.innerHTML=''; }
-
-async function proxyFetch(url, opts = { method: 'GET' }) {
-  if (!PROXY_API || PROXY_API.includes('your-proxy-app')) {
-    alert('Please replace PROXY_API placeholder in the HTML file with your backend URL.');
-    throw new Error('PROXY_API placeholder not replaced');
-  }
-  const endpoint = PROXY_API + '/proxy';
-  try {
-    const resp = await fetch(endpoint, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ url })
-    });
-    const data = await resp.json();
-    logSignal({event:'proxyFetchResult', url, ok: !!data.ok, status: data.status});
-    return data;
-  } catch (err) {
-    logSignal({event:'proxyFetchError', url, message: (err.message||err)+'', time: Date.now()});
-    return { ok:false, error: err.message||String(err) };
-  }
-}
-
-async function sendSignal(payload){
-  if (!PROXY_API || PROXY_API.includes('your-proxy-app')) return;
-  try {
-    await fetch(PROXY_API + '/signal', {
-      method: 'POST',
-      headers: {'Content-Type':'application/json'},
-      body: JSON.stringify(payload)
-    });
-  } catch(e){}
-}
-
-function logSignal(obj){
-  state.signals.unshift({time: new Date().toLocaleTimeString(), obj});
-  signalLog.innerHTML = state.signals.slice(0,60).map(s => `<div style="padding:6px;border-bottom:1px dashed rgba(255,255,255,0.02)"><div class="tiny">${s.time}</div><pre style="white-space:pre-wrap;margin:6px 0 0;color:var(--muted)">${escapeHtml(JSON.stringify(s.obj))}</pre></div>`).join('');
-}
-
-function escapeHtml(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
-
-function extractTitleFromHtml(html) {
-  try {
-    const doc = new DOMParser().parseFromString(html, 'text/html');
-    return doc.querySelector('title')?.innerText || null;
-  } catch(e){ return null; }
-}
-
-async function openURL(url, opts={followRedirects:true}) {
-  if (!url) return;
-  if (!/^https?:\/\//i.test(url) && url !== 'about:blank') url = 'http://' + url;
-
-  const tab = getActiveTab();
-  tab.url = url; tab.status = 'loading'; renderActive();
-
-  sendSignal({ event:'open', url, tabId: tab.id });
-
-  const result = await proxyFetch(url);
-  if (!result.ok) {
-    tab.status = 'error';
-    tab.content = `<body style="color:#e6eef6;background:#071426;padding:24px;font-family:system-ui"><h2>Error fetching</h2><pre style="white-space:pre-wrap;color:#fca5a5">${escapeHtml(result.error || 'unknown error')}</pre></body>`;
-    renderActive();
-    return;
-  }
-
-  if (result.redirected && result.redirectURL) {
-    showModal(`<div><h3>Redirect detected</h3><div class="small" style="margin-top:8px">The remote site returned a redirect to:</div><div style="margin-top:10px;padding:10px;border-radius:8px;background:rgba(255,255,255,0.02)"><code style="font-family:monospace">${escapeHtml(result.redirectURL)}</code></div><div class="small" style="margin-top:12px">Do you want to follow this redirect?</div></div>`, [
-      {label:'Follow', action: async ()=>{
-        closeModal();
-        await openURL(result.redirectURL);
-      }},
-      {label:'Open raw response', action: ()=>{
-        closeModal();
-        tab.status = 'loaded (redirect withheld)';
-        tab.content = result.body ? result.body : `<pre>${escapeHtml(JSON.stringify(result))}</pre>`;
-        tab.title = result.title || tab.title;
-        tab.icon = result.favicon || tab.icon;
-        renderActive();
-      }},
-      {label:'Cancel', action: ()=>{ closeModal(); tab.status='idle'; renderActive(); } }
-    ]);
-    return;
-  }
-
-  tab.status = 'loaded';
-  tab.content = result.body || `<body style="color:#e6eef6;background:#071426;padding:24px;font-family:system-ui"><h2>No body</h2></body>`;
-  tab.title = result.title || extractTitleFromHtml(result.body) || tab.url;
-  tab.icon = result.favicon || tab.icon;
-  renderActive();
-
-  if (tab.history[tab.historyIndex] !== url) {
-    tab.history = tab.history.slice(0, tab.historyIndex+1);
-    tab.history.push(url);
-    tab.historyIndex = tab.history.length - 1;
-  }
-  persistTabs();
-
-  sendSignal({ event:'fetched', url, status: result.status, title: tab.title, tabId: tab.id });
-}
-
-function goBack(){
-  const tab = getActiveTab();
-  if (tab.historyIndex > 0) {
-    tab.historyIndex--;
-    const prev = tab.history[tab.historyIndex];
-    openURL(prev);
-  }
-}
-function goForward(){
-  const tab = getActiveTab();
-  if (tab.historyIndex < tab.history.length - 1) {
-    tab.historyIndex++;
-    const next = tab.history[tab.historyIndex];
-    openURL(next);
-  }
-}
-
-goBtn.onclick = ()=>{ openURL(urlInput.value.trim()); };
-newTabBtn.onclick = ()=>{ createTab('about:blank'); };
-urlInput.addEventListener('keydown', (e)=>{ if(e.key==='Enter') openURL(urlInput.value.trim()); });
-backBtn.onclick = ()=> goBack();
-forwardBtn.onclick = ()=> goForward();
-
-loadTabs();
-renderTabs(); renderTabList(); renderActive();
-
-const initialTab = getActiveTab();
-if (initialTab && initialTab.url && initialTab.url !== 'about:blank') {
-  urlInput.value = initialTab.url;
-} else {
-  urlInput.value = '';
-}
-
-window.__miniProxy = {
-  state, openURL, createTab, closeTab, switchTab
-};
+UrlInput.addEventListener("keydown",function(Event){
+  if(Event.key==="Enter")LoadPage()
+})
 </script>
+
 </body>
 </html>
